@@ -24,6 +24,9 @@
 //   Eg : 3 appears 3 times in the second list
 // The result in the example above is 9 + 4 + 0 + 0 + 9 + 9
 
+// Main
+// Do the generic stuff
+// Call the functions for Part A and Part B
 
 using System;
 
@@ -36,13 +39,10 @@ namespace Day01
         {
             int sum = 0;
 
-            // No need to sort the lists since the numbers are already sorted
-            // Array.Sort(list1);
-            // Array.Sort(list2);
-
             // Part A
             for (int i = 0; i < list1.Length; i++)
             {
+                // Valeur absolue pcq c'est une distance
                 sum += Math.Abs(list1[i] - list2[i]);
             }
 
@@ -52,6 +52,10 @@ namespace Day01
         static int partB(int[] list1, int[] list2)
         {
             int sum = 0;
+
+            // Sert à éviter de parcourir la liste 2 à chaque fois
+            // Dans C# les dictionnaires sont implémentés avec des tables de hachage
+            // Donc la vitesse de recherche est O(1)
             Dictionary<int, int> dict = new Dictionary<int, int>();
 
             // Part B
@@ -68,6 +72,11 @@ namespace Day01
                 }                
             }
 
+            // N'afficher que les nombres qui apparaissent dans la liste 2
+            foreach (KeyValuePair<int, int> kvp in dict.Where(x => x.Value > 0))
+            {
+                Console.WriteLine("Key = {0}, Value = {1}", kvp.Key, kvp.Value);
+            }
             return sum;
         }
 
