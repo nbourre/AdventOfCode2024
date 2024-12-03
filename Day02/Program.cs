@@ -62,9 +62,7 @@ namespace Day02
 
             Console.WriteLine($"PartA : {result} ({ts.TotalMilliseconds} ms)");
 
-            stopwatch.Reset();
-
-            stopwatch.Start();
+            stopwatch = Stopwatch.StartNew();
             result = partB(lines, true);
 
             stopwatch.Stop();
@@ -284,7 +282,7 @@ namespace Day02
                             }
 
                             //Console.WriteLine($"Invalid row: {newLine}");
-                            Console.WriteLine(newLine);
+                            //Console.WriteLine(newLine);
                         }
                     }
                     
