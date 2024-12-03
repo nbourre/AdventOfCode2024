@@ -24,7 +24,21 @@
 // A row is valid if:
 //   - Same as part A, except there can be one error
 
+
+// Edge cases : These are all valid
+// 48 46 47 49 51 54 56
+// 1 1 2 3 4 5
+// 1 2 3 4 5 5
+// 5 1 2 3 4 5
+// 1 4 3 2 1
+// 1 6 7 8 9
+// 1 2 3 4 3
+// 9 8 7 6 7
+// 7 10 8 10 11
+// 29 28 27 25 26 25 22 20
+
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Day02
 {
@@ -32,6 +46,7 @@ namespace Day02
     {
         static void Main(string[] args)
         {
+            //string[] lines = System.IO.File.ReadAllLines("edgeCase.txt");
             string[] lines = System.IO.File.ReadAllLines("input.txt");
 
             // Create a new Stopwatch instance
@@ -55,6 +70,99 @@ namespace Day02
             stopwatch.Stop();
             ts = stopwatch.Elapsed;
             Console.WriteLine($"PartB : {result} ({ts.TotalMilliseconds} ms)");
+        }
+
+        static int isValid(int[] numbers) {
+            int result = -1;
+            for (int i = 1; i < numbers.Length - 1; i++)
+            {
+                int prev = numbers[i - 1];
+                int current = numbers[i];
+                int next = numbers[i + 1];
+
+                bool ascending = prev < current && current < next;
+                bool descending = prev > current && current > next;
+                bool spike = prev < current && current > next;
+                bool dip = prev > current && current < next;
+                bool flat = prev == current || current == next;
+
+                if (spike || dip)
+                {
+                    if (i == 1)
+                    {
+                        if (dip) {
+                            // LINQ expression to check if all the following numbers are bigger than the current
+                            if (numbers.Skip(i + 1).All(x => x > current))
+                            {
+                                if (Math.Abs(current - next) > 3)
+                                {
+                                    return i;
+                                }
+                                return 0;
+                            }
+                            else
+                            {
+                                return i;
+                            }
+                        }
+                       
+                        if (spike) {
+                            // LINQ expression to check if all the following numbers are smaller than the current
+                            if (numbers.Skip(i + 1).All(x => x < current))
+                            {
+                                if (Math.Abs(current - next) > 3)
+                                {
+                                    return i;
+                                }
+                                return 0;
+                            } else {
+                                return i;
+                            }
+                        }
+                    } else if (i == numbers.Length - 2)
+                    {
+                        if (dip) {
+                            // LINQ expression to check if all the previous numbers are smaller than the current
+                            if (numbers.Take(i).All(x => x < current))
+                            {
+                                return i;
+                            } else {
+                                return i + 1;
+                            }
+                        }
+                        if (spike) {
+                            // LINQ expression to check if all the previous numbers are bigger than the current
+                            if (numbers.Take(i).All(x => x > current))
+                            {
+                                return i;
+                            } else {
+                                return i + 1;
+                            }
+                        }
+                    }
+
+                    return i;
+                }
+
+                if (flat)
+                {
+                    return i;
+                }
+
+                int prevDiff = Math.Abs(prev - current);
+                int nextDiff = Math.Abs(current - next);
+
+                if (prevDiff > 3)
+                {
+                    return i - 1;
+                }
+
+                if (nextDiff > 3)
+                {
+                    return i + 1;
+                }                
+            }            
+            return result;
         }
 
         // Function that receives a list of numbers and returns if it's valid or not
@@ -118,7 +226,7 @@ namespace Day02
                 string[] numbers = line.Split(' ');
                 int[] intNumbers = Array.ConvertAll(numbers, int.Parse);
 
-                var result = isValidRow(intNumbers);
+                var result = isValid(intNumbers);
 
                 if (result == -1)
                 {
@@ -136,7 +244,7 @@ namespace Day02
                 string[] numbers = line.Split(' ');
                 int[] intNumbers = Array.ConvertAll(numbers, int.Parse);
 
-                var result = isValidRow(intNumbers);
+                var result = isValid(intNumbers);
 
                 if (result == -1)
                 {
@@ -156,7 +264,7 @@ namespace Day02
                         newNumbers.Add(intNumbers[i]);
                     }
 
-                    var newResult = isValidRow(newNumbers.ToArray());
+                    var newResult = isValid(newNumbers.ToArray());
                     if (newResult == -1)
                     {
                         validRows++;
@@ -175,8 +283,8 @@ namespace Day02
                                 newLine += $"{intNumbers[i]} ";
                             }
 
-                            Console.WriteLine($"Invalid row: {newLine}");
-                            //Console.WriteLine(newLine);
+                            //Console.WriteLine($"Invalid row: {newLine}");
+                            Console.WriteLine(newLine);
                         }
                     }
                     
