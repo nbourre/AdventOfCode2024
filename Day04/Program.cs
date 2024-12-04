@@ -1,6 +1,7 @@
 ﻿/**
 Day 04 : Word convolution
 
+Part A:
 - The word XMAS appears many times in the input.
 - It can be in any 8 directions. 4 cardinal directions and 4 diagonal directions.
 - It can be written backwards.
@@ -25,28 +26,86 @@ Probable solution:
 - Create a point spread filter for the word XMAS
 - Convolve the word XMAS in all 8 directions.
 - Count the number of times the word appears.
+
+Part B:
+Find this filter in any directions
+
+M.S
+.A.
+M.S
+
 **/
 
 using System;
+using System.Net;
 using System.Reflection.Metadata;
 
 namespace Day04
 {
+    static class ArrayExtensions
+    {
+        // Flip the array horizontally (reverse each row)
+        public static char[,] FlipHorizontally(this char[,] array)
+        {
+            int rows = array.GetLength(0);
+            int cols = array.GetLength(1);
+            char[,] flipped = new char[rows, cols];
+
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < cols; j++)
+                    flipped[i, j] = array[i, cols - 1 - j];
+
+            return flipped;
+        }
+
+        // Flip the array vertically (reverse the order of rows)
+        public static char[,] FlipVertically(this char[,] array)
+        {
+            int rows = array.GetLength(0);
+            int cols = array.GetLength(1);
+            char[,] flipped = new char[rows, cols];
+
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < cols; j++)
+                    flipped[i, j] = array[rows - 1 - i, j];
+
+            return flipped;
+        }
+
+        // Helper method to print a 2D array
+        public static void PrintArray(this char[,] array)
+        {
+            for (int i = 0; i < array.GetLength(0); i++)
+            {
+                for (int j = 0; j < array.GetLength(1); j++)
+                {
+                    Console.Write(array[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+        }
+    }
     class Program
     {
         private static readonly char[] XmasPattern = { 'X', 'M', 'A', 'S'};
         private static readonly int filterSize = 4;
 
+        private static readonly char[,] Mask = {
+            {'M', '.', 'S'},
+            {'.', 'A', '.'},
+            {'M', '.', 'S'}
+        };
+
         private static char[,] debugOutput;
 
         static void Main(string[] args)
         {
-            string[] lines = System.IO.File.ReadAllLines("input.txt");
+            string[] lines = System.IO.File.ReadAllLines("example.txt");
 
             // Convert lines to a 2D array of characters
             char[,] input = new char[lines.Length, lines[0].Length];
-            debugOutput = new char[lines.Length, lines[0].Length];
-            
+            char[,] debugOutput = new char[lines.Length, lines[0].Length];
+
             for (int i = 0; i < lines.Length; i++)
             {
                 for (int j = 0; j < lines[i].Length; j++)
@@ -60,18 +119,97 @@ namespace Day04
 
             Console.WriteLine($"Part A : {result}");
 
-            Console.WriteLine("Debug output:");
-            for (int i = 0; i < debugOutput.GetLength(0); i++)
+            result = partB(input);
+            Console.WriteLine($"Part B : {result}");
+        }
+
+        static int partB(char [,] input) {
+            
+            int count = 0;
+
+            for (int i = 0; i < input.GetLength(0); i++)
             {
-                for (int j = 0; j < debugOutput.GetLength(1); j++)
+                for (int j = 0; j < input.GetLength(1); j++)
                 {
-                    Console.Write(debugOutput[i, j]);
+                    count += convolveMask(input, i, j);
                 }
-                Console.WriteLine();
             }
 
-            // result = partB(lines);
-            // Console.WriteLine($"Part B : {result}");
+            return count;
+        }
+
+        static int convolveMask(char[,] input, int i, int j) {
+            int count = 0;
+
+            // There are 2 possible flip directions which gives 4 possible orientations
+            // 1. No flip
+            // 2. Horizontal flip
+            // 3. Vertical flip
+            // 4. Horizontal flip + Vertical flip
+
+            // 1. No flip
+            if (convolveMaskPattern(input, i, j, Mask))
+            {
+                count++;
+            }
+
+            // 2. Horizontal flip
+            char[,] hFlipped = Mask.FlipHorizontally();
+            if (convolveMaskPattern(input, i, j, hFlipped))
+            {
+                count++;
+            }
+
+            // 3. Vertical flip
+            char[,] vFlipped = Mask.FlipVertically();
+            if (convolveMaskPattern(input, i, j, vFlipped))
+            {
+                count++;
+            }
+
+            // 4. Horizontal flip + Vertical flip
+            char[,] hvFlipped = hFlipped.FlipVertically();
+            if (convolveMaskPattern(input, i, j, hvFlipped))
+            {
+                count++;
+            }
+
+
+            return count;
+        }
+
+        static bool convolveMaskPattern(char[,] input, int i, int j, char[,] mask) {
+
+            // Check if the mask can be convolved in the input
+            int maxI = i + mask.GetLength(0);
+            int maxJ = j + mask.GetLength(1);
+
+            if (maxI >= input.GetLength(0) || maxJ >= input.GetLength(1))
+            {
+                return false;
+            }
+
+            // Start from the mask size / 2 position
+            int maskI = mask.GetLength(0);
+            int maskJ = mask.GetLength(1);
+
+            for (int k = 0; k < maskI; k++)
+            {
+                for (int l = 0; l < maskJ; l++)
+                {
+                    if (mask[k, l] == '.')
+                    {
+                        continue;
+                    }
+
+                    if (mask[k, l] != input[i + k, j + l])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         static int partA(char[,] input)
@@ -177,17 +315,6 @@ namespace Day04
                     {
                         return false;
                     }
-
-                    i += di;
-                    j += dj;
-                }
-
-                // If the pattern is found, mark it in the debug output
-                i = originalI;
-                j = originalJ;
-                for (int k = 0; k < filterSize; k++)
-                {
-                    debugOutput[i, j] = '.';
 
                     i += di;
                     j += dj;
