@@ -100,7 +100,7 @@ namespace Day04
 
         static void Main(string[] args)
         {
-            string[] lines = System.IO.File.ReadAllLines("example.txt");
+            string[] lines = System.IO.File.ReadAllLines("input.txt");
 
             // Convert lines to a 2D array of characters
             char[,] input = new char[lines.Length, lines[0].Length];
@@ -115,11 +115,11 @@ namespace Day04
                 }
             }
 
-            int result = partA(input);
+            // int result = partA(input);
 
-            Console.WriteLine($"Part A : {result}");
+            // Console.WriteLine($"Part A : {result}");
 
-            result = partB(input);
+            int result = partB(input);
             Console.WriteLine($"Part B : {result}");
         }
 
@@ -127,10 +127,18 @@ namespace Day04
             
             int count = 0;
 
-            for (int i = 0; i < input.GetLength(0); i++)
+            // Because the mask is 3x3 :
+            // Start from the second row and second column
+            // Stop at the second last row and second last column
+            for (int i = 1; i < input.GetLength(0) - 1; i++)
             {
-                for (int j = 0; j < input.GetLength(1); j++)
+                for (int j = 1; j < input.GetLength(1) - 1; j++)
                 {
+                    // Only check if the character is 'A'
+                    if (input[i, j] != 'A')
+                    {
+                        continue;
+                    }
                     count += convolveMask(input, i, j);
                 }
             }
@@ -138,38 +146,61 @@ namespace Day04
             return count;
         }
 
+        static void printMask(char[,] mask) {
+            for (int i = 0; i < mask.GetLength(0); i++)
+            {
+                for (int j = 0; j < mask.GetLength(1); j++)
+                {
+                    Console.Write(mask[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+        }
+
         static int convolveMask(char[,] input, int i, int j) {
             int count = 0;
 
-            // There are 2 possible flip directions which gives 4 possible orientations
-            // 1. No flip
-            // 2. Horizontal flip
-            // 3. Vertical flip
-            // 4. Horizontal flip + Vertical flip
+            // The corners of the mask can be swapped in any direction, backward or forward
+            // So we must check all 4 possible combinations of the mask pattern
 
-            // 1. No flip
+            char[,] swapped_00_22_02_20 = Mask.FlipHorizontally();
+            char[,] swapped00_22 = Mask.FlipVertically();
+            char[,] swapped02_20 = swapped00_22.FlipVertically();
+                        
+            char temp = swapped00_22[0, 0];
+            swapped00_22[0, 0] = swapped00_22[2, 2];
+            swapped00_22[2, 2] = temp;
+
+            temp = swapped02_20[0, 2];
+            swapped02_20[0, 2] = swapped02_20[2, 0];
+            swapped02_20[2, 0] = temp;            
+
+            // printMask(Mask);
+            // printMask(swapped_00_22_02_20);
+            // printMask(swapped00_22);
+            // printMask(swapped02_20);
+
+
             if (convolveMaskPattern(input, i, j, Mask))
             {
+                // 1. No flip
                 count++;
             }
 
             // 2. Horizontal flip
-            char[,] hFlipped = Mask.FlipHorizontally();
-            if (convolveMaskPattern(input, i, j, hFlipped))
+            if (convolveMaskPattern(input, i, j, swapped_00_22_02_20))
             {
                 count++;
             }
 
-            // 3. Vertical flip
-            char[,] vFlipped = Mask.FlipVertically();
-            if (convolveMaskPattern(input, i, j, vFlipped))
+            // 3. Vertical flip            
+            if (convolveMaskPattern(input, i, j, swapped00_22))
             {
                 count++;
             }
 
-            // 4. Horizontal flip + Vertical flip
-            char[,] hvFlipped = hFlipped.FlipVertically();
-            if (convolveMaskPattern(input, i, j, hvFlipped))
+            // 4. Horizontal flip + Vertical flip            
+            if (convolveMaskPattern(input, i, j, swapped02_20))
             {
                 count++;
             }
@@ -178,38 +209,38 @@ namespace Day04
             return count;
         }
 
-        static bool convolveMaskPattern(char[,] input, int i, int j, char[,] mask) {
 
-            // Check if the mask can be convolved in the input
-            int maxI = i + mask.GetLength(0);
-            int maxJ = j + mask.GetLength(1);
+        // We must convolve the mask pattern in the input starting from the i, j position
+        // with the center of the mask pattern at i, j
+        static bool convolveMaskPattern(char[,] input, int i, int j, char[,] mask)
+        {
+            // We must convolve in the pattern in the input starting from i, j
+            // So we must check if the mask pattern is present in the input
+            // starting from i, j
+            int maskRows = mask.GetLength(0);
+            int maskCols = mask.GetLength(1);
+            int startRow = i - maskRows / 2;
+            int startCol = j - maskCols / 2;
 
-            if (maxI >= input.GetLength(0) || maxJ >= input.GetLength(1))
+            for (int k = 0; k < maskRows; k++)
             {
-                return false;
-            }
-
-            // Start from the mask size / 2 position
-            int maskI = mask.GetLength(0);
-            int maskJ = mask.GetLength(1);
-
-            for (int k = 0; k < maskI; k++)
-            {
-                for (int l = 0; l < maskJ; l++)
+                for (int l = 0; l < maskCols; l++)
                 {
                     if (mask[k, l] == '.')
                     {
                         continue;
                     }
+                    char inChar = input[startRow + k, startCol + l];
+                    char maskChar = mask[k, l];
 
-                    if (mask[k, l] != input[i + k, j + l])
+                    if (inChar != maskChar)
                     {
                         return false;
                     }
                 }
             }
-
-            return true;
+                        
+            return true;            
         }
 
         static int partA(char[,] input)
