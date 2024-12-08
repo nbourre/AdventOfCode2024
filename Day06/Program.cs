@@ -207,7 +207,7 @@ namespace Day06
         static void Main(string[] args)
         {
             Console.WriteLine("Day 06 - Guard Gallivant");
-            string[] input = System.IO.File.ReadAllLines("input.txt");
+            string[] input = System.IO.File.ReadAllLines("example.txt");
             char[,] pathGrid;
 
             // Part A
