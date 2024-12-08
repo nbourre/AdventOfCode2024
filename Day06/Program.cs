@@ -27,6 +27,7 @@ Example answer: 41
 **/
 
 using System;
+using Microsoft.VisualBasic;
 
 namespace Day06
 {
@@ -39,27 +40,86 @@ namespace Day06
         {
             public VisitedPoint(int x, int y, int direction)
             {
-                this.x = x;
-                this.y = y;
-                this.direction = direction;
+                this.X = x;
+                this.Y = y;
+                this.Direction = direction;
             }
-            public int x;
-            public int y;
-            public int direction;
+            public int X;
+            public int Y;
+            public int Direction;
         }
 
-        static List<VisitedPoint> visitedPoints = new List<VisitedPoint>();
+        static readonly (int, int)[] Directions = { (-1, 0), (0, 1), (1, 0), (0, -1) }; // Up, Right, Down, Left
        
         /// <summary>
-        /// Check if the guard can be blocked if we put a obstacle at the given position
-        /// Algorithm:
-        /// If we put an obstacle at the given position, we need to check if the guard can be blocked
-        /// To check if the guard can be blocked, if the guard is moving back to the same position, it can be blocked
+        /// Traverse the grid to find the path of the guard
         /// </summary>
-       
-        static bool CanBlockGuard(char[,] grid, int x, int y, int direction)
+        /// <param name="grid">The grid to traverse</param>
+        /// <param name="startPos">The starting position of the guard in X, Y</param>
+        /// <param name="startDirection">The starting direction of the guard</param>
+        /// <returns>A tuple containing the path and a boolean indicating if the guard is in an infinite loop</returns>
+        static (HashSet<(int, int)>, bool) Traverse(char[,] grid, (int, int) startPos, int startDirection)
         {
-            return false;
+            var visitedPoint = new VisitedPoint(startPos.Item1, startPos.Item2, startDirection);
+            var visited = new Dictionary<(int, int), HashSet<int>>();
+            var pos = startPos;
+            var direction = startDirection;
+            bool infiniteLoop = true;
+
+            while (true)
+            {
+                if (!visited.ContainsKey(pos))
+                {
+                    visited[pos] = new HashSet<int>();
+                }
+
+                // Check if we have been here in the same direction before
+                // if so, it means the guard is moving back to the same position
+                if (visited[pos].Contains(direction))
+                {
+                    break;
+                }
+
+                visited[pos].Add(direction);
+
+                // Try to move in the current direction or turn if blocked
+                bool moved = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    // Calculate the next position
+                    var nextPos = (
+                        pos.Item1 + Directions[direction].Item1,
+                        pos.Item2 + Directions[direction].Item2
+                    );
+
+                    // Check bounds
+                    if (nextPos.Item1 < 0 || nextPos.Item2 < 0 || nextPos.Item1 >= grid.GetLength(1) || nextPos.Item2 >= grid.GetLength(0))
+                    {
+                        infiniteLoop = false; // Guard exits the map
+                        return (new HashSet<(int, int)>(visited.Keys), infiniteLoop);
+                    }
+
+                    // Check if the next position is not an obstacle
+                    if (grid[nextPos.Item1, nextPos.Item2] != '#')
+                    {
+                        pos = nextPos; // Move to the next position
+                        moved = true;
+                        break;
+                    }
+
+                    // Turn right if the way is blocked
+                    direction = (direction + 1) % 4;
+                }
+
+                // If no move was made, the guard is stuck (all directions blocked)
+                if (!moved)
+                {
+                    break;
+                }
+            }
+
+
+            return (new HashSet<(int, int)>(visited.Keys), infiniteLoop);
         }
 
         static Tuple<char [,], int, int> ConvertToGrid(string[] input)
@@ -95,8 +155,8 @@ namespace Day06
             // Convert the input to a grid
             var result = ConvertToGrid(input);
             grid = result.Item1;
-            x = result.Item2;
-            y = result.Item3;
+            y = result.Item2;
+            x = result.Item3;
 
             // Copy the original grid
             originalGrid = new char[grid.GetLength(0), grid.GetLength(1)];
@@ -108,95 +168,38 @@ namespace Day06
                 }
             }
 
-            // Build the current path of the guard
-            // Add current position to the list of visited points
-            VisitedPoint visitedPoint = new(x, y, direction);
-            while (true)
-            {
-                // Check if there is a obstacle in front of the guard
-                if (direction == 0)
-                {
-                    // Check if the guard is going out of the grid
-                    if (y - 1 < 0)
-                    {
-                        break;
-                    }
-                    
-                    if (grid[y - 1, x] == '#')
-                    {
-                        direction = (direction + 1) % 4;
-                    }
-                }
-                else if (direction == 1)
-                {
-                    if (x + 1 >= grid.GetLength(1))
-                    {
-                        break;
-                    }
+            var startPos = (x, y);
+            var traverse = Traverse(grid, (x, y), direction);
+            var visitedPoints = traverse.Item1;           
 
-                    if (grid[y, x + 1] == '#')
-                    {
-                        direction = (direction + 1) % 4;
-                    }
-                }
-                else if (direction == 2)
+            var possibilities = new HashSet<(int, int)>(visitedPoints);
+            possibilities.Remove(startPos);
+
+            int count = 0;
+
+            foreach (var obstacle in possibilities) {
+                char [,] updatedGrid = new char[grid.GetLength(0), grid.GetLength(1)];
+                for (int i = 0; i < grid.GetLength(0); i++)
                 {
-                    if (y + 1 >= grid.GetLength(0))
+                    for (int j = 0; j < grid.GetLength(1); j++)
                     {
-                        break;
-                    }
-                    if (grid[y + 1, x] == '#')
-                    {
-                        direction = (direction + 1) % 4;
-                    }
-                }
-                else if (direction == 3)
-                {
-                    if (x - 1 < 0)
-                    {
-                        break;
-                    }
-                    if (grid[y, x - 1] == '#')
-                    {
-                        direction = (direction + 1) % 4;
+                        updatedGrid[i, j] = grid[i, j];
                     }
                 }
 
-                if (direction == 0)
-                {
-                    y--;
-                }
-                else if (direction == 1)
-                {
-                    x++;
-                }
-                else if (direction == 2)
-                {
-                    y++;
-                }
-                else if (direction == 3)
-                {
-                    x--;
-                }
+                updatedGrid[obstacle.Item2, obstacle.Item1] = '#';
 
-                if (x < 0 || x >= grid.GetLength(1) || y < 0 || y >= grid.GetLength(0))
+                var (dgaf, isInfinite) = Traverse(updatedGrid, startPos, direction);
+                if (isInfinite)
                 {
-                    break;
+                    count++;
                 }
-
-                visitedPoints.Add(new VisitedPoint(x, y, direction));
             }
 
-            // Starting from the last visited point, check if the guard can be blocked
-            for (int i = visitedPoints.Count - 1; i >= 0; i--)
-            {
-                // Put a obstacle at the current position
-                grid[visitedPoints[i].y, visitedPoints[i].x] = '#';
-
-            }
+            Console.WriteLine(count);
 
 
-            return -1;
+            return count;
         }
     
 
@@ -204,7 +207,7 @@ namespace Day06
         static void Main(string[] args)
         {
             Console.WriteLine("Day 06 - Guard Gallivant");
-            string[] input = System.IO.File.ReadAllLines("example.txt");
+            string[] input = System.IO.File.ReadAllLines("input.txt");
             char[,] pathGrid;
 
             // Part A
@@ -382,3 +385,102 @@ namespace Day06
         }
     }
 }
+
+/**
+
+// Build the current path of the guard
+// Add current position to the list of visited points
+VisitedPoint visitedPoint = new(x, y, direction);
+while (true)
+{
+    // Check if visitedPoint is already in the list
+    // if so, it means the guard is moving back to the same position
+    if (visitedPoints.Count(p => p.X == visitedPoint.X && p.Y == visitedPoint.Y && p.Direction == visitedPoint.Direction) > 0)
+    {
+        break;
+    } else {
+        visitedPoints.Add(visitedPoint);
+    }
+
+    // Check if there is a obstacle in front of the guard
+    if (direction == 0)
+    {
+        // Check if the guard is going out of the grid
+        if (y - 1 < 0)
+        {
+            break;
+        }
+        
+        if (grid[y - 1, x] == '#')
+        {
+            direction = (direction + 1) % 4;
+        }
+    }
+    else if (direction == 1)
+    {
+        if (x + 1 >= grid.GetLength(1))
+        {
+            break;
+        }
+
+        if (grid[y, x + 1] == '#')
+        {
+            direction = (direction + 1) % 4;
+        }
+    }
+    else if (direction == 2)
+    {
+        if (y + 1 >= grid.GetLength(0))
+        {
+            break;
+        }
+        if (grid[y + 1, x] == '#')
+        {
+            direction = (direction + 1) % 4;
+        }
+    }
+    else if (direction == 3)
+    {
+        if (x - 1 < 0)
+        {
+            break;
+        }
+        if (grid[y, x - 1] == '#')
+        {
+            direction = (direction + 1) % 4;
+        }
+    }
+
+    if (direction == 0)
+    {
+        y--;
+    }
+    else if (direction == 1)
+    {
+        x++;
+    }
+    else if (direction == 2)
+    {
+        y++;
+    }
+    else if (direction == 3)
+    {
+        x--;
+    }
+
+    if (x < 0 || x >= grid.GetLength(1) || y < 0 || y >= grid.GetLength(0))
+    {
+        break;
+    }
+
+    visitedPoint = new(x, y, direction);                
+}
+
+// Starting from the last visited point, check if the guard can be blocked
+for (int i = visitedPoints.Count - 1; i >= 0; i--)
+{
+    // Put a obstacle at the current position
+    grid[visitedPoints[i].Y, visitedPoints[i].X] = '#';
+
+}
+**/
