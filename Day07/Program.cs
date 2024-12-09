@@ -154,6 +154,7 @@ namespace Day07
 
             object lockObj = new object(); // Lock for thread safety
 
+            // FIXME: Break the loop when a part of the combination is greater than the result
             // Bruteforce all the possible combinations
             // In parallel baby!!
             Parallel.For(0, combinations, (i, state) =>
