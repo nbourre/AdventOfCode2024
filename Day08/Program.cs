@@ -70,6 +70,8 @@ namespace Day08
             public Point? AntinodeA;
             public Point? AntinodeB;
 
+            public List<Point> HarmonicAntinodes = new List<Point>();
+
             public override string ToString()
             {
                 return $"Frequency: {Frequency}\t A: {A}, B: {B}\t AntinodeA: {AntinodeA}\t AntinodeB: {AntinodeB}";
@@ -116,7 +118,7 @@ namespace Day08
             
         }
 
-        static int PartA(string [] input) {
+        static int PartA(string [] input, bool hasHarmonic = false) {
             // Find all the pairs of antennas
             List<Pairs> pairs = new List<Pairs>();
             int countAntiNodes = 0;
@@ -163,22 +165,31 @@ namespace Day08
                                     int dx = j - i;
                                     int dy = k - lineCount;
 
-                                    // Calculate the top antinode position
-                                    int x = i - dx;
-                                    int y = lineCount - dy;
-
-                                    if (x >= 0 && x < nextLine.Length && y >= 0 && y < input.Length)
+                                    if (!hasHarmonic)
                                     {
-                                        pair.AntinodeA = new Point(x, y);
-                                    }
+                                        // Calculate the top antinode position
+                                        int x = i - dx;
+                                        int y = lineCount - dy;
 
-                                    // Calculate the bottom antinode position
-                                    x = j + dx;
-                                    y = k + dy;
+                                        if (x >= 0 && x < nextLine.Length && y >= 0 && y < input.Length)
+                                        {
+                                            pair.AntinodeA = new Point(x, y);
+                                        }
 
-                                    if (x >= 0 && x < nextLine.Length && y >= 0 && y < input.Length)
-                                    {
-                                        pair.AntinodeB = new Point(x, y);
+                                        // Calculate the bottom antinode position
+                                        x = j + dx;
+                                        y = k + dy;
+
+                                        if (x >= 0 && x < nextLine.Length && y >= 0 && y < input.Length)
+                                        {
+                                            pair.AntinodeB = new Point(x, y);
+                                        }
+                                    } else {
+                                        // Harmonic applies the same dx and dy until the end of the grid
+                                        // No need to create antinodes
+                                        // Mathematically just need to calculate the number of 
+                                        // antinodes for each pair which fits in the grid
+                                        double distance = Math.Sqrt(dx * dx + dy * dy);                                        
                                     }
 
                                     pairs.Add(pair);
