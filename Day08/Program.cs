@@ -189,6 +189,7 @@ namespace Day08
                                         // No need to create antinodes
                                         // Mathematically just need to calculate the number of 
                                         // antinodes for each pair which fits in the grid
+                                        // Src : https://adventofcode.com/2024/day/8#part2
                                         double distance = Math.Sqrt(dx * dx + dy * dy);                                        
                                     }
 
