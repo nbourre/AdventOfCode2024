@@ -134,7 +134,7 @@ namespace Day07
                         if (answer == 0) // Check if the answer has not been set yet
                         {
                             answer = result;
-                            Console.WriteLine(result + " = " + equation);
+                            //Console.WriteLine(result + " = " + equation);
                             state.Stop(); // Stop other threads
                         }
                     }
@@ -176,7 +176,7 @@ namespace Day07
                         if (answer == 0) // Check if the answer has not been set yet
                         {
                             answer = result;
-                            Console.WriteLine(result + " = " + equation);
+                            //Console.WriteLine(result + " = " + equation);
                             state.Stop(); // Stop other threads
                         }
                     }
@@ -192,7 +192,7 @@ namespace Day07
             Stopwatch stopwatch = Stopwatch.StartNew();
 
 
-            string[] lines = File.ReadAllLines("input.txt");
+            string[] lines = File.ReadAllLines("justin.txt");
             long sum = 0;
 
             object lockObj = new object(); // Lock for thread-safe sum updates
