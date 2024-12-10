@@ -28,6 +28,7 @@ Explanation Part A:
 **/
 
 using System;
+using System.Data;
 using System.Runtime.ExceptionServices;
 
 namespace Day08
@@ -71,6 +72,10 @@ namespace Day08
             public Point? AntinodeB;
 
             public List<Point> HarmonicAntinodes = new List<Point>();
+
+            public Pairs()
+            {
+            }
 
             public override string ToString()
             {
@@ -124,6 +129,7 @@ namespace Day08
             int countAntiNodes = 0;
 
             int lineCount = 0;
+
             foreach (string line in input)
             {
                 
@@ -185,12 +191,38 @@ namespace Day08
                                             pair.AntinodeB = new Point(x, y);
                                         }
                                     } else {
-                                        // Harmonic applies the same dx and dy until the end of the grid
-                                        // No need to create antinodes
-                                        // Mathematically just need to calculate the number of 
-                                        // antinodes for each pair which fits in the grid
-                                        // Src : https://adventofcode.com/2024/day/8#part2
-                                        double distance = Math.Sqrt(dx * dx + dy * dy);                                        
+                                        // Count the harmonic antinodes until the edge of the grid
+                                        bool topLeftOutOfBounds = false;
+                                        bool bottomRightOutOfBounds = false;
+                                        int count = 1;
+                                        while (!(topLeftOutOfBounds && bottomRightOutOfBounds))
+                                        {
+                                            int x = count * dx;
+                                            int y = count * dy;
+
+                                            Point antinodeTL = new Point(i - x, lineCount - y);
+                                            Point antinodeBR = new Point(j + x, k + y);
+
+                                            if (antinodeTL.X >= 0 && antinodeTL.X < nextLine.Length && antinodeTL.Y >= 0 && antinodeTL.Y < input.Length)
+                                            {
+                                                pair.HarmonicAntinodes.Add(antinodeTL);
+                                            }
+                                            else
+                                            {
+                                                topLeftOutOfBounds = true;
+                                            }
+
+                                            if (antinodeBR.X >= 0 && antinodeBR.X < nextLine.Length && antinodeBR.Y >= 0 && antinodeBR.Y < input.Length)
+                                            {
+                                                pair.HarmonicAntinodes.Add(antinodeBR);
+                                            }
+                                            else
+                                            {
+                                                bottomRightOutOfBounds = true;
+                                            }
+
+                                            count++;
+                                        }                              
                                     }
 
                                     pairs.Add(pair);
@@ -202,32 +234,81 @@ namespace Day08
                 lineCount++;                
             }
 
-            // Count the number of antinodes
-            // Join the list of antinodes A and B
-            List<Point> antinodes = new List<Point>();
-            foreach (Pairs pair in pairs)
+            if (!hasHarmonic)
             {
-                if (pair.AntinodeA.HasValue)
+                // Count the number of antinodes
+                // Join the list of antinodes A and B
+                List<Point> antinodes = new List<Point>();
+                foreach (Pairs pair in pairs)
                 {
-                    if (!antinodes.Contains(pair.AntinodeA.Value))
-                    {   
-                        antinodes.Add(pair.AntinodeA.Value);
-                        countAntiNodes++;
+                    if (pair.AntinodeA.HasValue)
+                    {
+                        if (!antinodes.Contains(pair.AntinodeA.Value))
+                        {
+                            antinodes.Add(pair.AntinodeA.Value);
+                            countAntiNodes++;
+                        }
+
                     }
-                    
+
+                    if (pair.AntinodeB.HasValue)
+                    {
+                        if (!antinodes.Contains(pair.AntinodeB.Value))
+                        {
+                            antinodes.Add(pair.AntinodeB.Value);
+                            countAntiNodes++;
+                        }
+                    }
+                }
+            } else {
+                // create a grid of spaces the same size as the input
+                // for each pair, add the antinodes to the grid
+                // count the number of antinodes
+                char[,] grid = new char[input.Length, input[0].Length];
+
+                // LINQ to fill the grid with spaces
+                for (int i = 0; i < input.Length; i++)
+                {
+                    for (int j = 0; j < input[i].Length; j++)
+                    {
+                        grid[i, j] = ' ';
+                    }
                 }
 
-                if (pair.AntinodeB.HasValue)
+                foreach (Pairs pair in pairs)
                 {
-                    if (!antinodes.Contains(pair.AntinodeB.Value))
+                    grid[pair.A.Y, pair.A.X] = '#';
+                    grid[pair.B.Y, pair.B.X] = '#';
+
+                    if (pair.HarmonicAntinodes.Count > 0)
                     {
-                        antinodes.Add(pair.AntinodeB.Value);
-                        countAntiNodes++;
+                        foreach (Point antinode in pair.HarmonicAntinodes)
+                        {
+                            grid[antinode.Y, antinode.X] = '#';
+                        }
                     }
+
                 }
+
+                // Count the number of antinodes by counting the number of '#' in the grid
+                for (int i = 0; i < input.Length; i++)
+                {
+                    for (int j = 0; j < input[i].Length; j++)
+                    {
+                        if (grid[i, j] == '#')
+                        {
+                            countAntiNodes++;
+                        }
+
+                        //Console.Write(grid[i, j]);
+                    }
+                    //Console.WriteLine();
+                }
+                
+                
             }
 
-            PrintGridComparison(input, pairs);
+            //PrintGridComparison(input, pairs);
 
             return countAntiNodes;
         }
@@ -236,6 +317,7 @@ namespace Day08
         {
             string[] input = File.ReadAllLines("input.txt");
             Console.WriteLine("Part A: " + PartA(input)); 
+            Console.WriteLine("Part A: " + PartA(input, true)); 
         }
 
 
