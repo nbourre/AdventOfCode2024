@@ -84,6 +84,27 @@ namespace Day09
             return compressedDiskMap;
         }
 
+        // Find the next free space in the diskMap and returns the index and the number of free spaces
+        static (int, int) FindNextFreeSpace(List<int> diskMap, int startIndex) {
+            int nbFreeSpaces = 0;
+            int index = startIndex;
+
+            // Find the next free space (-1) starting from the startIndex
+            while (index < diskMap.Count && diskMap[index] != -1)
+            {
+                index++;
+            }
+
+            // Count the number of free spaces
+            while (index < diskMap.Count && diskMap[index] == -1)
+            {
+                nbFreeSpaces++;
+                index++;
+            }
+
+            return (index, nbFreeSpaces);
+        }
+
         static int[] CompressDiskMapV2(List<int> diskMap) {
             int[] compressedDiskMap = new int[diskMap.Count];
             
@@ -185,7 +206,7 @@ namespace Day09
         static void Main(string[] args)
         {
 
-            bool debug = false;
+            bool debug = true;
             string[] input = File.ReadAllLines("example.txt");
             List<int> diskMap = GetDiskMap(input[0]);
 
