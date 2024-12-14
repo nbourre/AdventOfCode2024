@@ -40,7 +40,7 @@ $...$
 
 Vous voyez donc que cela donne les images où les motifs apparaissent. On essaie de trouver le moment où les deux motifs apparaissent simultanément, c'est-à-dire la première fois où $s_1[i] = s_2[j] = n$. (Remarquez que c'est $n$ que nous recherchons; l'indices $i$ ne nous intéressent pas.)
 
-On peut utilisé un [solveur en ligne](https://www.dcode.fr/chinese-remainder). Vous devez faire attention avec les solveurs en ligne, car certains sont simplement cassés, mais celui-ci fonctionne. Les restes seraient 85 et 27, et les modulos seraient 103 et 101. Le solveur donne 7501, qui est la réponse.
+On peut utilisé un [solveur en ligne](https://www.dcode.fr/chinese-remainder). Vous devez faire attention avec les solveurs en ligne, car certains sont simplement cassés, mais celui-ci fonctionne. Les restes seraient 85 et 27, et les modulos seraient 103 et 101. Le solveur donne 7501, qui est la réponse, **mais** il faut ajouter 1 à ce nombre pour obtenir le résultat correct, car le déplacement des robots débute à 1 secondes selon l'énoncé.
 
 <details><summary>Attention! Spoiler!</summary>
 

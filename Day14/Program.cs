@@ -172,7 +172,7 @@ namespace Day14
                 // Fucking brute force to find the message
                 // Better solution with chinese remainder theorem
                 // GenerateImage(robots, gridWidth, gridHeight, i);
-                // Part B : Answer is 7502
+                // Part B : Answer is 7501 + 1 Because index starts from 1
             }
 
             int middleX = gridWidth / 2;
