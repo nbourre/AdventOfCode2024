@@ -39,6 +39,8 @@ Treat the problem as a binary image processing problem.
 **/
 
 using System;
+using System.Data;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Day12
 {
@@ -58,12 +60,15 @@ namespace Day12
             public int startCol;
             public int Area;
             public int Perimeter;
+            public int Sides;
+
+            public int Cost() => Area * Perimeter;
         }
 
         static void Main(string[] args)
         {
             List<CropType> cropTypes = new List<CropType>();
-            string[] input = File.ReadAllLines("example.txt");
+            string[] input = File.ReadAllLines("input.txt");
 
             char[,] garden = new char[input.Length, input[0].Length];
             for (int i = 0; i < input.Length; i++)
@@ -100,12 +105,24 @@ namespace Day12
                 cropTypes.Add(cropType);                
             }
 
-            // Test with a specific crop
-            var crop = cropTypes.Where(c => c.Letter == 'I').First();
-            crop.Regions = FindConnectedComponents(crop.Garden);
-            crop.Area = crop.Regions.Sum(r => r.Area);
-            
-         
+            // // Test with a specific crop
+            // var crop = cropTypes.Where(c => c.Letter == 'R').First();
+            // crop.Regions = FindConnectedComponents(crop.Garden);
+            // crop.Area = crop.Regions.Sum(r => r.Area);
+
+            // // Print the garden
+            // PrintPlot(crop.Garden);         
+            int totalCost = 0;
+            for (int i = 0; i < cropTypes.Count; i++)
+            {
+                var crop = cropTypes[i];
+                crop.Regions = FindConnectedComponents(cropTypes[i].Garden);
+
+                totalCost += crop.Regions.Sum(r => r.Cost());
+            }
+
+            // Print the answer
+            Console.WriteLine(totalCost);
         }
 
         static List<Region> FindConnectedComponents(int[,] grid)
@@ -127,7 +144,9 @@ namespace Day12
                     {
                         Region region = new Region();
                         // Start DFS for a new region
-                        region.Area = DFS(grid, visited, i, j, dRow, dCol);
+                        region.Area = DFS(grid, visited, i, j, dRow, dCol, out region.Perimeter, out region.Sides);
+                        region.startRow = i;
+                        region.startCol = j;
                         regions.Add(region);
                     }
                 }
@@ -149,12 +168,14 @@ namespace Day12
         }
 
         // Depth First Search
-        static int DFS(int[,] grid, bool[,] visited, int row, int col, int[] dRow, int[] dCol)
+        static int DFS(int[,] grid, bool[,] visited, int row, int col, int[] dRow, int[] dCol, out int perimeter, out int sides)
         {
             Stack<(int, int)> stack = new Stack<(int, int)>();
             stack.Push((row, col));
             visited[row, col] = true;
             int size = 0;
+            perimeter = 0;
+            sides = 0; // Sides are simply the number of corners
 
             while (stack.Count > 0)
             {
@@ -169,10 +190,30 @@ namespace Day12
 
                     if (IsValid(grid, visited, newRow, newCol))
                     {
-                        // TODO: Calculate perimeter
                         visited[newRow, newCol] = true;
                         stack.Push((newRow, newCol));
                     }
+
+                    /// The number of sides is the number of corners of the region
+                    /// A corner that has as neighbour one of the following :
+                    /// TODO : Complete the logic for counting the sides
+                    int prevRow = currentRow - dRow[(d + 2) % 4];
+                    int prevCol = currentCol - dCol[(d + 2) % 4];
+
+                    // Check if current cell is on the boundary
+                    if (newRow < 0 || newRow >= grid.GetLength(0) ||
+                        newCol < 0 || newCol >= grid.GetLength(1))
+                    {
+                        perimeter++;
+                        
+                    }
+                    // if the cell is a boundary but inside the grid
+                    else if (grid[newRow, newCol] == 0)
+                    {                       
+                        perimeter++;
+                    }            
+
+
                 }
             }
 
