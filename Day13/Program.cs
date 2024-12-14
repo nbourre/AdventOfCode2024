@@ -28,6 +28,8 @@ Example input:
     Button B: X+27, Y+71
     Prize: X=18641, Y=10279
 
+Solution probable : Système d'équations linéaires
+
 
 **/
 
