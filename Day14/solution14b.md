@@ -20,9 +20,7 @@ Dans ce problème, il y avait deux séquences :
 1. $s_1$ : Les moments où le motif horizontal apparaissait, et  
 2. $s_2$ : Les moments où le motif vertical apparaissait.
 
-![alt text](solution14b_a.png)
-
-![alt text](solution14b_b.png)
+![alt text](solution14b.png)
 
 Pour moi, le motif horizontal apparaissait pour la première fois à $t = 85$, puis tous les 103 images après cela. Le motif vertical apparaissait pour la première fois à $t = 27$, puis tous les 101 images après cela.
 
@@ -43,3 +41,9 @@ $...$
 Vous voyez donc que cela donne les images où les motifs apparaissent. On essaie de trouver le moment où les deux motifs apparaissent simultanément, c'est-à-dire la première fois où $s_1[i] = s_2[j] = n$. (Remarquez que c'est $n$ que nous recherchons; l'indices $i$ ne nous intéressent pas.)
 
 On peut utilisé un [solveur en ligne](https://www.dcode.fr/chinese-remainder). Vous devez faire attention avec les solveurs en ligne, car certains sont simplement cassés, mais celui-ci fonctionne. Les restes seraient 85 et 27, et les modulos seraient 103 et 101. Le solveur donne 7501, qui est la réponse.
+
+<details><summary>Attention! Spoiler!</summary>
+
+![alt text](output_7501.png)
+
+</details>
