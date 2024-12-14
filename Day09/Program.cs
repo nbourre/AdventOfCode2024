@@ -41,22 +41,27 @@ namespace Day09
 {
     class Program
     {
-        static long checkSum(int[] input) {
+        static long checkSum(int[] input)
+        {
             long sum = 0;
-            for (int i = 0; i < input.Length; i++) {
-                sum += input[i] * i;
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] != -1)
+                    sum += input[i] * i;
             }
             return sum;
         }
         // Swap every -1 with the last digit in the diskMap
-        static int[] CompressDiskMap(List<int> diskMap) {
+        static int[] CompressDiskMap(List<int> diskMap)
+        {
             int[] compressedDiskMap = new int[diskMap.Count];
             int count = 0;
             int lastDigitIndex = diskMap.Count - 1;
             int lastValue = -1;
             int nbSpaces = diskMap.Count(x => x == -1);
             int nbSwaps = 0;
-            foreach (int n in diskMap) {
+            foreach (int n in diskMap)
+            {
                 if (n == -1)
                 {
                     // This is a free space and needs to be swapped with the last digit
@@ -69,7 +74,9 @@ namespace Day09
                     }
                     compressedDiskMap[count] = lastValue;
                     nbSwaps++;
-                } else {
+                }
+                else
+                {
                     compressedDiskMap[count] = n;
                 }
                 count++;
@@ -85,7 +92,8 @@ namespace Day09
         }
 
         // Find the next free space in the diskMap and returns the index and the number of free spaces
-        static (int, int) FindNextFreeSpace(List<int> diskMap, int startIndex) {
+        static (int, int) FindNextFreeSpace(List<int> diskMap, int startIndex)
+        {
             int nbFreeSpaces = 0;
             int index = startIndex;
 
@@ -95,6 +103,8 @@ namespace Day09
                 index++;
             }
 
+            int firstFreeSpaceIndex = index;
+
             // Count the number of free spaces
             while (index < diskMap.Count && diskMap[index] == -1)
             {
@@ -102,16 +112,32 @@ namespace Day09
                 index++;
             }
 
-            return (index, nbFreeSpaces);
+            if (index >= diskMap.Count)
+            {
+                // We have reached the end of the diskMap
+                firstFreeSpaceIndex = -1;
+            }
+
+            return (firstFreeSpaceIndex, nbFreeSpaces);
         }
 
-        static int[] CompressDiskMapV2(List<int> diskMap) {
+        // Swap the series of files with the free space
+        static void SwapFilesWithFreeSpace(List<int> diskMap, int firstDigitIndex, int lastDigitIndex, int nextFreeSpaceIndex, int nbFiles)
+        {
+            for (int i = 0; i < nbFiles; i++)
+            {
+                diskMap[nextFreeSpaceIndex + i] = diskMap[firstDigitIndex + i];
+                diskMap[firstDigitIndex + i] = -1;
+            }
+        }
+        static int[] CompressDiskMapV2(List<int> diskMap)
+        {
             int[] compressedDiskMap = new int[diskMap.Count];
-            
+
             int lastDigitIndex = diskMap.Count - 1;
             int nbSpaces = diskMap.Count(x => x == -1);
-            int lastSwappedIndex = 0;
-            int firstFreeSpaceIndex = 0;
+
+            int maxSpaceLeft = -1;
 
             // Starting from the end of the diskMap
             // Find the first series of files
@@ -130,43 +156,55 @@ namespace Day09
                         firstDigitIndex--;
                     }
 
-                    int nbFiles = (lastDigitIndex - firstDigitIndex) + 1;
+                    int nbFiles = lastDigitIndex - firstDigitIndex + 1;
+                    int nextFreeSpaceIndex = 0;
+                    int nextFreeSpaceCount = 0;
 
-                    // Find the first free space that fits the series of files
-                    while (firstFreeSpaceIndex < diskMap.Count && diskMap[firstFreeSpaceIndex] != -1)
+                    // Find the next free space that fits the series of files
+                    while (nextFreeSpaceCount < nbFiles && nextFreeSpaceIndex < diskMap.Count && nextFreeSpaceIndex != -1 && nextFreeSpaceIndex < firstDigitIndex)
                     {
-                        compressedDiskMap[firstFreeSpaceIndex] = diskMap[firstFreeSpaceIndex];
-                        firstFreeSpaceIndex++;
-                    }
+                        (nextFreeSpaceIndex, nextFreeSpaceCount) = FindNextFreeSpace(diskMap, nextFreeSpaceIndex);
 
-                    // Count the number of free spaces
-                    int nbFreeSpaces = 0;
-                    while (firstFreeSpaceIndex < diskMap.Count && diskMap[firstFreeSpaceIndex] == -1)
-                    {
-                        nbFreeSpaces++;
-                        firstFreeSpaceIndex++;
-                    }
-
-                    // Check if the number of free spaces is enough to fit the series of files
-                    if (nbFreeSpaces >= nbFiles)
-                    {
-                        // Swap the series of files with the free space
-                        for (int i = 0; i < nbFiles; i++)
+                        if (nextFreeSpaceCount > maxSpaceLeft)
                         {
-                            compressedDiskMap[firstFreeSpaceIndex - nbFreeSpaces + i] = diskMap[firstDigitIndex + i];
+                            maxSpaceLeft = nextFreeSpaceCount;
+                        }
+
+                        if (nextFreeSpaceIndex == -1)
+                        {
+                            // We have reached the end of the diskMap
+                            break;
+                        }
+
+                        if (nextFreeSpaceIndex >= diskMap.Count)
+                        {
+                            // We have reached the end of the diskMap
+                            nextFreeSpaceIndex = -1;
+                            break;
+                        }
+
+                        if (nextFreeSpaceIndex + 1 >= firstDigitIndex)
+                        {
+                            nextFreeSpaceIndex = -1;
+                            break;
+                        }
+
+
+                        if (nextFreeSpaceCount < nbFiles)
+                        {
+                            // The free space is not big enough
+                            nextFreeSpaceIndex += nextFreeSpaceCount;
+                            nextFreeSpaceCount = 0;
                         }
                     }
-                    else
+
+                    if (nextFreeSpaceIndex > 0)
                     {
-                        // Not enough free space to fit the series of files
+                        // We have found a free space that fits the series of files
                         // Swap the series of files with the free space
-                        for (int i = 0; i < nbFiles; i++)
-                        {
-                            compressedDiskMap[lastSwappedIndex + i] = diskMap[firstDigitIndex + i];
-                        }
-                        lastSwappedIndex += nbFiles;
+                        SwapFilesWithFreeSpace(diskMap, firstDigitIndex, lastDigitIndex, nextFreeSpaceIndex, nbFiles);
                     }
-                    
+
                     lastDigitIndex -= nbFiles;
                 }
                 else
@@ -175,20 +213,26 @@ namespace Day09
                 }
             }
 
-            
-            
+            // Convert the diskMap to an array
+            for (int i = 0; i < diskMap.Count; i++)
+            {
+                compressedDiskMap[i] = diskMap[i];
+            }
 
             return compressedDiskMap;
         }
 
-        static List<int> GetDiskMap(string input) {
+        static List<int> GetDiskMap(string input)
+        {
             List<int> diskMap = new List<int>();
 
             // Each char is a digit which represents the number of files or free space
             int pos = 0;
-            foreach (char c in input) {
+            foreach (char c in input)
+            {
                 int n = c - '0';
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < n; i++)
+                {
                     if (pos % 2 == 0)
                     {
                         diskMap.Add(pos / 2);
@@ -207,19 +251,27 @@ namespace Day09
         {
 
             bool debug = true;
-            string[] input = File.ReadAllLines("example.txt");
+            string filename = "input.txt";
+            //MrAudet(filename);
+            string[] input = File.ReadAllLines(filename);
             List<int> diskMap = GetDiskMap(input[0]);
-
-            int[] compressedDiskMap = CompressDiskMap(diskMap);
-            int[] compressedDiskMapV2 = CompressDiskMapV2(diskMap);
-            long cs = checkSum(compressedDiskMap);
 
             if (debug)
             {
                 // Save the disk map to a file
                 string diskMapStr = string.Join(".", diskMap);
                 File.WriteAllText("diskMap.txt", diskMapStr);
+            }
 
+
+            int[] compressedDiskMap = CompressDiskMap(diskMap);
+            long cs = checkSum(compressedDiskMap);
+
+            int[] compressedDiskMapV2 = CompressDiskMapV2(diskMap);
+            long cs2 = checkSum(compressedDiskMapV2);
+
+            if (debug)
+            {
                 // Save the compressed disk map to a file
                 string compressedDiskMapStr = string.Join(".", compressedDiskMap);
                 File.WriteAllText("compressedDiskMap.txt", compressedDiskMapStr);
@@ -228,9 +280,9 @@ namespace Day09
                 // Save the compressed disk map to a file
                 File.WriteAllText("compressedDiskMapV2.txt", string.Join(".", compressedDiskMapV2));
             }
-            
+
             Console.WriteLine("Part A: " + cs);
-            Console.WriteLine("Part B: " + checkSum(compressedDiskMapV2));
+            Console.WriteLine("Part B: " + cs2);
         }
     }
 }
