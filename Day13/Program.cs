@@ -217,13 +217,26 @@ namespace Day13
             Console.WriteLine("Day 13 - Claw Contraption");
 
             string filename = "input.txt";
-            string[] input = System.IO.File.ReadAllLines(filename);
+            string[] input = File.ReadAllLines(filename);
+
+            // Create a new Stopwatch instance
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
             var partA = PartA(input, false);
+
+            stopwatch.Stop();
+
+            // Get the elapsed time as a TimeSpan
+            TimeSpan ts = stopwatch.Elapsed;
+            Console.WriteLine($"Part A: {partA} ({ts.TotalMilliseconds} ms)");
+
+            stopwatch = Stopwatch.StartNew();
+
             var partB = PartA(input, true);
 
-            Console.WriteLine("Part A: " + partA);
-            Console.WriteLine("Part B: " + partB);
+            stopwatch.Stop();
+            ts = stopwatch.Elapsed;
+            Console.WriteLine($"Part B: {partB} ({ts.TotalMilliseconds} ms)");
         }
     }
 }
