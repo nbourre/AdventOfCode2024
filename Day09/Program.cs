@@ -247,12 +247,101 @@ namespace Day09
             return diskMap;
         }
 
+        static void RedditMain(string filename) {
+            try
+            {
+                // Read the file and parse the inputs
+                string input = File.ReadAllLines(filename)[0];
+
+                // Process the inputs
+                long result = 0;
+
+                try
+                {
+                    // Step 1: Parse input into integers
+                    var parsedInput = input.Select(x => x).ToList();
+                    Console.WriteLine("Parsed Input: " + string.Join(", ", parsedInput));
+
+                    // Step 2: Wrap each integer in a single-item list
+                    var wrappedNumbers = parsedInput.Select(x => new List<int> { x }).ToList();
+                    Console.WriteLine("Wrapped Numbers: " + string.Join(" | ", wrappedNumbers.Select(w => $"[{string.Join(", ", w)}]")));
+
+                    // Step 3: Get end numbers for each single-item list
+                    var endNumbers = wrappedNumbers.Select(GetEndNumbers).ToList();
+                    Console.WriteLine("End Numbers: " + string.Join(" | ", endNumbers.Select(ends => 
+                        string.Join(", ", ends.Select(e => $"({e.first}, {e.last})")))));
+
+                    // Step 4: Extract first numbers from each end number list
+                    var firstNumbers = endNumbers.Select(ends => ends.Select(e => e.first)).ToList();
+                    Console.WriteLine("First Numbers: " + string.Join(" | ", firstNumbers.Select(f => $"[{string.Join(", ", f)}]")));
+
+                    // Step 5: Reverse the list of first numbers
+                    var reversedFirstNumbers = firstNumbers.Select(f => f.Reverse().ToList()).ToList();
+                    Console.WriteLine("Reversed First Numbers: " + string.Join(" | ", reversedFirstNumbers.Select(f => $"[{string.Join(", ", f)}]")));
+
+                    // Step 6: Aggregate first numbers by subtracting them (b - a)
+                    var aggregatedNumbers = reversedFirstNumbers.Select(f => f.Aggregate((a, b) => b - a)).ToList();
+                    Console.WriteLine("Aggregated Numbers: " + string.Join(", ", aggregatedNumbers));
+
+                    // Step 7: Sum the aggregated numbers
+                    result = aggregatedNumbers.Sum();
+                    Console.WriteLine("Final Result: " + result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                }
+
+
+                Console.WriteLine($"Result: {result}");
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine($"Error: File '{filename}' not found.");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Error: Input file contains invalid numbers.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Calculates the first and last numbers of each transformation step.
+        /// </summary>
+        private static List<(int first, int last)> GetEndNumbers(List<int> input)
+        {
+            var endNumbers = new List<(int first, int last)> { (input.First(), input.Last()) };
+
+            while (input.Count > 1) // Continue until only one number remains
+            {
+                // Calculate differences between consecutive elements
+                var nextInput = input.Take(input.Count - 1)
+                                     .Select((val, index) => input[index + 1] - val)
+                                     .ToList();
+
+                if (nextInput.Any())
+                {
+                    endNumbers.Add((nextInput.First(), nextInput.Last()));
+                }
+
+                input = nextInput; // Update input for the next iteration
+            }
+
+            return endNumbers;
+        }
+        
+
         static void Main(string[] args)
         {
 
             bool debug = true;
-            string filename = "input.txt";
+            string filename = "example.txt";
             //MrAudet(filename);
+            RedditMain(filename); // Not working
             string[] input = File.ReadAllLines(filename);
             List<int> diskMap = GetDiskMap(input[0]);
 
