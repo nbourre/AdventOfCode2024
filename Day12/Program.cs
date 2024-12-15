@@ -49,7 +49,6 @@ namespace Day12
         struct CropType {
             public char Letter;
             public int Area;
-            public int Perimeter;
             public int[,] Garden;
 
             public List<Region> Regions;
@@ -68,7 +67,7 @@ namespace Day12
         static void Main(string[] args)
         {
             List<CropType> cropTypes = new List<CropType>();
-            string[] input = File.ReadAllLines("input.txt");
+            string[] input = File.ReadAllLines("example.txt");
 
             char[,] garden = new char[input.Length, input[0].Length];
             for (int i = 0; i < input.Length; i++)
@@ -167,6 +166,29 @@ namespace Day12
             }
         }
 
+
+        // Count the corners of a cell
+        static int CountCorners (int [,] garden, int i, int j)
+        {
+            int corners = 0;
+
+            if (garden[i, j] == 1)
+            {
+                int left = j - 1;
+                int right = j + 1;
+                int up = i - 1;
+                int down = i + 1;
+
+                // All top left cases
+                if (left >= 0 && up >= 0 && garden[up, left] == 0)
+                {
+                    corners++;
+                }
+            }
+
+            return corners;
+        }
+
         // Depth First Search
         static int DFS(int[,] grid, bool[,] visited, int row, int col, int[] dRow, int[] dCol, out int perimeter, out int sides)
         {
@@ -175,7 +197,7 @@ namespace Day12
             visited[row, col] = true;
             int size = 0;
             perimeter = 0;
-            sides = 0; // Sides are simply the number of corners
+            sides = 0;
 
             while (stack.Count > 0)
             {
@@ -193,28 +215,9 @@ namespace Day12
                         visited[newRow, newCol] = true;
                         stack.Push((newRow, newCol));
                     }
-
-                    /// The number of sides is the number of corners of the region
-                    /// A corner that has as neighbour one of the following :
-                    /// TODO : Complete the logic for counting the sides
-                    int prevRow = currentRow - dRow[(d + 2) % 4];
-                    int prevCol = currentCol - dCol[(d + 2) % 4];
-
-                    // Check if current cell is on the boundary
-                    if (newRow < 0 || newRow >= grid.GetLength(0) ||
-                        newCol < 0 || newCol >= grid.GetLength(1))
-                    {
-                        perimeter++;
-                        
-                    }
-                    // if the cell is a boundary but inside the grid
-                    else if (grid[newRow, newCol] == 0)
-                    {                       
-                        perimeter++;
-                    }            
-
-
                 }
+                // Count the sides
+                sides += CountCorners(grid, currentRow, currentCol);
             }
 
             return size;
