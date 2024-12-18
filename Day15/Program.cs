@@ -52,6 +52,16 @@ Approach :
         - Map (player, boxes, walls)
     - Create a class for the warehouse
 
+Part B:
+    - Every thing is twice as wide
+    - If the tile is #, the new map contains ## instead.
+    - If the tile is O, the new map contains [] instead.
+    - If the tile is ., the new map contains .. instead.
+    - If the tile is @, the new map contains @. instead.
+    - A box can now overlap two boxes and push them both
+
+
+
 **/
 using System;
 using System.Collections.Generic;
@@ -65,13 +75,15 @@ namespace WarehouseSimulation
     {
         static void Main(string[] args)
         {
-            string filePath = "input.txt"; // Replace with your file path
+            string filePath = "example3.txt"; // Replace with your file path
             string[] fileContent = File.ReadAllText(filePath).Split(new[] { "\r\n\r\n" }, StringSplitOptions.None);
             
             string[] mapInput = fileContent[0].Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
             string movesInput = fileContent[1].Replace("\r\n", "").Replace(" ", "");
 
-            var warehouse = new Warehouse(mapInput);
+            var warehouse = new Warehouse(mapInput, true);
+            warehouse.PrintMap();
+
             warehouse.SimulateMoves(movesInput);
 
             Console.WriteLine("Final Map:");
@@ -88,25 +100,63 @@ namespace WarehouseSimulation
         private (int row, int col) playerPosition;
         private List<(int row, int col)> boxes;
 
-        public Warehouse(string[] mapInput)
+        public Warehouse(string[] mapInput, bool grow = false)
         {
             int rows = mapInput.Length;
             int cols = mapInput[0].Length;
-            map = new char[rows, cols];
+
+            if (grow)
+            {
+                map = new char[rows, cols * 2];
+            } else {
+                map = new char[rows, cols];
+            }
+
+            
             boxes = new List<(int row, int col)>();
 
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    map[r, c] = mapInput[r][c];
-                    if (map[r, c] == '@')
+                    var currentChar = mapInput[r][c];
+
+                    if (grow)
                     {
-                        playerPosition = (r, c);
+                        switch (currentChar)
+                        {
+                            case '#':
+                                map[r, c * 2] = '#';
+                                map[r, c * 2 + 1] = '#';
+                                break;
+                            case 'O':
+                                map[r, c * 2] = '[';
+                                map[r, c * 2 + 1] = ']';
+                                break;
+                            case '.':
+                                map[r, c * 2] = '.';
+                                map[r, c * 2 + 1] = '.';
+                                break;
+                            case '@':
+                                playerPosition = (r, c * 2);
+                                map[r, c * 2] = '@';
+                                map[r, c * 2 + 1] = '.';
+                                break;
+                        }
+                        
+
                     }
-                    else if (map[r, c] == 'O')
+                    else
                     {
-                        boxes.Add((r, c));
+                        map[r, c] = mapInput[r][c];
+                        if (map[r, c] == '@')
+                        {
+                            playerPosition = (r, c);
+                        }
+                        else if (map[r, c] == 'O')
+                        {
+                            boxes.Add((r, c));
+                        }
                     }
                 }
             }
@@ -114,11 +164,9 @@ namespace WarehouseSimulation
 
         public void SimulateMoves(string moves)
         {
-            var frameIndex = 0;
             foreach (char move in moves)
             {
                 MakeMove(move);
-                SaveMapAsImage("output", frameIndex++);
             }
         }
 
@@ -140,6 +188,16 @@ namespace WarehouseSimulation
                     map[playerPosition.row, playerPosition.col] = '.';
                     playerPosition = (newRow, newCol);
                 }
+            } else if (map[newRow, newCol] == '[' || map[newRow, newCol] == ']')
+            {
+                if (CanMoveBoxChainWide(newRow, newCol, dr, dc))
+                {
+                    MoveBoxChainWide(newRow, newCol, dr, dc);
+                    // Move the player to the box's previous position
+                    map[newRow, newCol] = '@';
+                    map[playerPosition.row, playerPosition.col] = '.';
+                    playerPosition = (newRow, newCol);
+                }
             }
             else
             {
@@ -149,7 +207,7 @@ namespace WarehouseSimulation
                 playerPosition = (newRow, newCol);
             }
 
-            //DisplayMap(false, direction);
+            DisplayMap(false, direction);
         }
 
         private (int dr, int dc) GetDirection(char move)
@@ -162,6 +220,61 @@ namespace WarehouseSimulation
                 '>' => (0, 1),
                 _ => (0, 0),
             };
+        }
+
+        /// <summary>
+        /// Now the boxes are represented by two characters '[]'
+        /// They can now overlap between two cells when going up or down
+        /// </summary>
+        /// <param name="row">Current box row</param>
+        /// <param name="col">Current box col</param>
+        /// <param name="dr">Movement row direction</param>
+        /// <param name="dc">Movement col direction</param>
+        /// <returns></returns>      
+        private bool CanMoveBoxChainWide(int row, int col, int dr, int dc)
+        {
+            // Calculate the position the box would move to
+            int nextRow = row + dr;
+            int nextCol = col + dc;
+
+            if(map[nextRow, nextCol] == '#') {
+                return false;
+            } else if (map[nextRow, nextCol] == '[' || map[nextRow, nextCol] == ']') {
+                if (dr == 0) {
+                    return CanMoveBoxChainWide(nextRow, nextCol, dr, dc);
+                }
+                // We need to check both sides of the box
+                if (map[nextRow, nextCol] == '[') {
+                    return CanMoveBoxChainWide(nextRow, nextCol, dr, dc) && CanMoveBoxChainWide(nextRow, nextCol + 1, dr, dc);
+                } else {
+                    return CanMoveBoxChainWide(nextRow, nextCol, dr, dc) && CanMoveBoxChainWide(nextRow, nextCol - 1, dr, dc);
+                }
+            }
+
+
+            // If the next position is empty, the chain can move
+            return map[nextRow, nextCol] == '.';
+        }
+
+        private void MoveBoxChainWide(int row, int col, int dr, int dc) {
+            int nextRow = row + dr;
+            int nextCol = col + dc;
+
+            // If the next position is a box, recursively move it first
+            if (map[nextRow, nextCol] == '[' || map[nextRow, nextCol] == ']')
+            {
+                MoveBoxChainWide(nextRow, nextCol, dr, dc);
+            }
+
+            // Move the current box to the next position
+            map[nextRow, nextCol] = '[';
+            map[nextRow, nextCol + 1] = ']';
+            map[row, col] = '.';
+            map[row, col + 1] = '.';
+
+            // Update the box position in the list
+            boxes.Remove((row, col));
+            boxes.Add((nextRow, nextCol));            
         }
 
         private bool CanMoveBoxChain(int row, int col, int dr, int dc)
@@ -253,14 +366,52 @@ namespace WarehouseSimulation
                 {
                     Directory.CreateDirectory(outputDir);
                 }
-                
+
                 // Save the frame as a PNG image
                 string fileName = Path.Combine(outputDir, $"frame_{frameIndex}.png");
                 bitmap.Save(fileName, System.Drawing.Imaging.ImageFormat.Png);
             }
         }
 
-        private void DisplayMap(bool debug = false, char move = ' ')
+        // Part B : Double the width of the map
+        public void GrowMap()
+        {
+            int rows = map.GetLength(0);
+            int cols = map.GetLength(1);
+            char[,] newMap = new char[rows, cols * 2];
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    char currentChar = map[r, c];
+                    int newCol = c * 2;
+
+                    switch (currentChar)
+                    {
+                        case '#':
+                            newMap[r, newCol] = '#';
+                            newMap[r, newCol + 1] = '#';
+                            break;
+                        case 'O':
+                            newMap[r, newCol] = '[';
+                            newMap[r, newCol + 1] = ']';
+                            break;
+                        case '.':
+                            newMap[r, newCol] = '.';
+                            newMap[r, newCol + 1] = '.';
+                            break;
+                        case '@':
+                            newMap[r, newCol] = '@';
+                            newMap[r, newCol + 1] = '.';
+                            break;
+                    }
+                }
+            }
+            map = newMap;
+        }
+
+        public void DisplayMap(bool debug = false, char move = ' ')
         {
             if (!Console.IsOutputRedirected) // Skip if no valid console handle
             {
