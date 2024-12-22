@@ -82,6 +82,7 @@ namespace WarehouseSimulation
             string movesInput = fileContent[1].Replace("\r\n", "").Replace(" ", "");
 
             var warehouse = new Warehouse(mapInput, true);
+            Console.WriteLine("Initial Map:");
             warehouse.PrintMap();
 
             warehouse.SimulateMoves(movesInput);
@@ -167,6 +168,7 @@ namespace WarehouseSimulation
             foreach (char move in moves)
             {
                 MakeMove(move);
+                DisplayMap(false, move);
             }
         }
 
@@ -206,8 +208,6 @@ namespace WarehouseSimulation
                 map[playerPosition.row, playerPosition.col] = '.';
                 playerPosition = (newRow, newCol);
             }
-
-            DisplayMap(false, direction);
         }
 
         private (int dr, int dc) GetDirection(char move)
@@ -257,24 +257,69 @@ namespace WarehouseSimulation
         }
 
         private void MoveBoxChainWide(int row, int col, int dr, int dc) {
+            /// This is a recursive function that moves the box chain
+            /// First we need to now if it's a vertical or horizontal movement
+            /// If it's vertical, we need to move boxes that are splitted on half box
+            /// If it's horizontal, we need to move boxes that are splitted on half box
+            
             int nextRow = row + dr;
             int nextCol = col + dc;
 
-            // If the next position is a box, recursively move it first
-            if (map[nextRow, nextCol] == '[' || map[nextRow, nextCol] == ']')
-            {
-                MoveBoxChainWide(nextRow, nextCol, dr, dc);
+            char currentChar = map[row, col];
+            char nextChar = map[nextRow, nextCol];
+
+            if (dc != 0) {
+                // Horizontal movement
+                // if the nextChar is a space, put the end of the box there put the start of the box in the current position
+                // This depends on the direction of the movement
+
+                // Console.WriteLine($"Before moving box chain");
+                // PrintRow(row);
+                if (nextChar == '.') {
+                    map[nextRow, nextCol] = currentChar;
+                    map[row, col] = '.';
+                } else {
+                    // If the nextChar is a box, move it first
+                    MoveBoxChainWide(nextRow, nextCol, dr, dc);
+                    // Move the current box to the next position
+                    map[nextRow, nextCol] = currentChar;
+                    map[row, col] = '.';
+                }
+                // Console.WriteLine($"After moving box chain");
+                // PrintRow(nextRow);
+            }
+            else {
+                // Vertical movement
+                // We need to check if the next box is splitted in two
+                if (nextChar == ']')
+                {
+                    /// We are on the right side of the box, we need to move the left side first
+                    /// Then we move the right side
+                    MoveBoxChainWide(nextRow, nextCol - 1, dr, dc);
+                    MoveBoxChainWide(nextRow, nextCol, dr, dc);
+                }
+                else if (nextChar == '[')
+                {
+                    /// We are on the left side of the box, we need to move the right side first
+                    /// Then we move the left side
+                    /// We need to move the right side first
+                    /// Then we move the left side
+                    MoveBoxChainWide(nextRow, nextCol, dr, dc);
+                    MoveBoxChainWide(nextRow, nextCol + 1, dr, dc);
+                }
+                else
+                {
+                    // The character is a space, we can move the box
+                    map[nextRow, nextCol] = currentChar;
+                    map[row, col] = '.';
+                }                
             }
 
-            // Move the current box to the next position
-            map[nextRow, nextCol] = '[';
-            map[nextRow, nextCol + 1] = ']';
-            map[row, col] = '.';
-            map[row, col + 1] = '.';
+            
 
-            // Update the box position in the list
-            boxes.Remove((row, col));
-            boxes.Add((nextRow, nextCol));            
+            
+
+
         }
 
         private bool CanMoveBoxChain(int row, int col, int dr, int dc)
@@ -320,6 +365,17 @@ namespace WarehouseSimulation
             return boxes.Sum(box => 100 * box.row + box.col);
         }
 
+        #region Display functions
+
+        public void PrintRow(int row)
+        {
+            for (int c = 0; c < map.GetLength(1); c++)
+            {
+                Console.Write(map[row, c]);
+            }
+            Console.WriteLine();
+        }
+
         public void PrintMap()
         {
             for (int r = 0; r < map.GetLength(0); r++)
@@ -332,46 +388,7 @@ namespace WarehouseSimulation
             }
         }
 
-        private void SaveMapAsImage(string outputDir, int frameIndex)
-        {
-            // Create an image with the same dimensions as the map
-            int cellSize = 20; // Size of each "cell" in the map for the image
-            int width = map.GetLength(1) * cellSize;
-            int height = map.GetLength(0) * cellSize;
 
-            using (Bitmap bitmap = new Bitmap(width, height))
-            using (Graphics g = Graphics.FromImage(bitmap))
-            {
-                g.Clear(Color.White); // Set background color
-
-                // Set font and brush for drawing characters
-                using (Font font = new Font("Courier New", 10))
-                using (Brush brush = new SolidBrush(Color.Black))
-                {
-                    for (int row = 0; row < map.GetLength(0); row++)
-                    {
-                        for (int col = 0; col < map.GetLength(1); col++)
-                        {
-                            char currentChar = map[row, col];
-                            string text = currentChar.ToString();
-
-                            // Draw each character as text
-                            g.DrawString(text, font, brush, col * cellSize, row * cellSize);
-                        }
-                    }
-                }
-
-                // if the output directory does not exist, create it
-                if (!Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Save the frame as a PNG image
-                string fileName = Path.Combine(outputDir, $"frame_{frameIndex}.png");
-                bitmap.Save(fileName, System.Drawing.Imaging.ImageFormat.Png);
-            }
-        }
 
         // Part B : Double the width of the map
         public void GrowMap()
@@ -439,5 +456,50 @@ namespace WarehouseSimulation
             }   
         }
 
+        private void SaveMapAsImage(string outputDir, int frameIndex)
+        {
+            // Create an image with the same dimensions as the map
+            int cellSize = 20; // Size of each "cell" in the map for the image
+            int width = map.GetLength(1) * cellSize;
+            int height = map.GetLength(0) * cellSize;
+
+            using (Bitmap bitmap = new Bitmap(width, height))
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Color.White); // Set background color
+
+                // Set font and brush for drawing characters
+                using (Font font = new Font("Courier New", 10))
+                using (Brush brush = new SolidBrush(Color.Black))
+                {
+                    for (int row = 0; row < map.GetLength(0); row++)
+                    {
+                        for (int col = 0; col < map.GetLength(1); col++)
+                        {
+                            char currentChar = map[row, col];
+                            string text = currentChar.ToString();
+
+                            // Draw each character as text
+                            g.DrawString(text, font, brush, col * cellSize, row * cellSize);
+                        }
+                    }
+                }
+
+                // if the output directory does not exist, create it
+                if (!Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Save the frame as a PNG image
+                string fileName = Path.Combine(outputDir, $"frame_{frameIndex}.png");
+                bitmap.Save(fileName, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }
+
+        #endregion
+
     }
+
+    
 }
