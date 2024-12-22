@@ -45,11 +45,15 @@ namespace Day22
     
     class Program
     {
+        internal readonly record struct Sequence(sbyte A, sbyte B, sbyte C, sbyte D);
+
         struct Buyer
         {
             public ulong secretNumber;
             public ulong secretNumber2000;
             public short[] variations;
+
+            public HashSet<Sequence> sequences;
 
             public Buyer(ulong secretNumber)
             {
@@ -57,6 +61,9 @@ namespace Day22
                 this.secretNumber2000 = 0;
             }
         }
+
+        
+
 
         static ulong Mix(ulong value, ulong secretNumber)
         {
@@ -85,12 +92,25 @@ namespace Day22
             return secretNumber;
         }
 
-        static ulong MonkeyMarket(ulong secretNumber, Buyer buyer)
+        static ulong BuyerPrices(ulong secretNumber, Buyer buyer, Dictionary<Sequence, int> trackingSeq)
         {
+            var lastFour = new sbyte[4];
+            int? last = null;
+
             for (int i = 0; i < 2000; i++)
             {
                 buyer.variations[i] = (short)(secretNumber % 10);
+                lastFour[i % 4] = (sbyte)buyer.variations[i];
                 secretNumber = NextSecretNumber(secretNumber);
+
+                if (i >= 4)
+                {
+                    var key = new Sequence(lastFour[i%4], lastFour[(i-1)%4], lastFour[(i-2)%4], lastFour[(i-3)%4]);
+                    if (buyer.sequences.Add(key))
+                    {
+                        trackingSeq[key] = trackingSeq.GetValueOrDefault(key) + buyer.variations[i];                        
+                    }
+                }
             }
 
             return secretNumber;
@@ -109,38 +129,43 @@ namespace Day22
             {
                 buyers[i].secretNumber = ulong.Parse(content[i]);
                 buyers[i].variations = new short[2000];
+                buyers[i].sequences = new HashSet<Sequence>();
             }
 
-            // For debugging purpose display data from small files
-            if (filename.StartsWith("example")) {
-                for (int i = 0; i < content.Length; i++)
-                {
-                    buyers[i].secretNumber2000 = MonkeyMarket(buyers[i].secretNumber, buyers[i]);
-                    sum += buyers[i].secretNumber2000;
+            var trackingSeq = new Dictionary<Sequence, int>();
 
-                    // Print the 20 first secret numbers
-                    for (int j = 0; j < 20; j++)
-                    {
-                        Console.Write($"{buyers[i].variations[j]}, ");
-                    }
 
-                    Console.WriteLine();
-                    
-                }
+            for (int i = 0; i < content.Length; i++)
+            {
+                buyers[i].secretNumber2000 = BuyerPrices(buyers[i].secretNumber, buyers[i], trackingSeq);
+                sum += buyers[i].secretNumber2000;
 
-            } else {
-                Parallel.For(0, content.Length, i =>
-                {
-                    buyers[i].secretNumber2000 = MonkeyMarket(buyers[i].secretNumber, buyers[i]);
-                    sum += buyers[i].secretNumber2000;
-                });
+                // // Print the 20 first secret numbers
+                // for (int j = 0; j < 20; j++)
+                // {
+                //     Console.Write($"{buyers[i].variations[j]}, ");
+                // }
+
+                // Console.WriteLine();
             }
+
+            Console.WriteLine($"Part A : The sum of the 2000th secret numbers of all buyers is {sum}");
+            Console.WriteLine($"Part B : The highest price is {trackingSeq.Values.Max()}");
+
+
+            // } else {
+            //     Parallel.For(0, content.Length, i =>
+            //     {
+            //         buyers[i].secretNumber2000 = BuyerPrices(buyers[i].secretNumber, buyers[i]);
+            //         sum += buyers[i].secretNumber2000;
+            //     });
+            // }
 
 
             // Improve the performance by using parallel for loop
 
 
-            Console.WriteLine($"Part A : The sum of the 2000th secret numbers of all buyers is {sum}");
+            
 
         }
     }
