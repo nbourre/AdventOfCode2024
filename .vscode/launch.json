@@ -1,6 +1,12 @@
 {
     "configurations": [
         {
+            "name": "C#: Day23 Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/Day23/Day23.csproj"
+        },
+        {
             "name": "C#: Day24 Debug",
             "type": "dotnet",
             "request": "launch",
