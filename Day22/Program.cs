@@ -120,7 +120,7 @@ namespace Day22
         {
             Console.WriteLine("Day 22: Monkey Market");
             
-            var filename = "example2.txt";
+            var filename = "input.txt";
             var content = File.ReadAllLines(filename);
 
             ulong sum = 0;
